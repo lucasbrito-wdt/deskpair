@@ -58,7 +58,7 @@ jobs:
     needs: build-deb
     runs-on: ubuntu-latest
     container:
-      image: bilelmoussaoui/flatpak-github-actions:gnome-48
+      image: bilelmoussaoui/flatpak-github-actions:gnome-47
       options: --privileged
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +75,7 @@ jobs:
           cat > flatpak/build-manifest.yml << YAML
           id: dev.deskpair.app
           runtime: org.gnome.Platform
-          runtime-version: '48'
+          runtime-version: '47'
           sdk: org.gnome.Sdk
           command: deskpair
           finish-args:
