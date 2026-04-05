@@ -35,8 +35,20 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+
       - name: Install frontend dependencies
         run: npm install
+
+      - name: Install Tauri CLI
+        run: npm install @tauri-apps/cli@latest
 
       - name: Build Tauri app
         run: npx tauri build
