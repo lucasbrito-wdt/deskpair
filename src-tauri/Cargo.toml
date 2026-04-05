@@ -1,6 +1,6 @@
 [package]
 name = "deskpair"
-version = "0.1.1"
+version = "0.1.2"
 description = "Deskpair - Control Panel & Installer"
 authors = ["Lucas Brito"]
 license = "ISC"
