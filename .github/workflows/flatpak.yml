@@ -46,20 +46,14 @@ jobs:
       - name: Install Tauri CLI
         run: npm install @tauri-apps/cli@latest
 
-      - name: Build Tauri app
-        run: npx tauri build
+      - name: Build Tauri app (.deb only)
+        run: npx tauri build --bundles deb
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
         with:
           name: deb-package
           path: src-tauri/target/release/bundle/deb/*.deb
-
-      - name: Upload .AppImage artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: appimage-package
-          path: src-tauri/target/release/bundle/appimage/*.AppImage
 
   build-flatpak:
     name: Build Flatpak
@@ -142,6 +136,5 @@ jobs:
         with:
           files: |
             deb-package/*.deb
-            appimage-package/*.AppImage
             flatpak-app/dev.deskpair.app.flatpak
           generate_release_notes: true
