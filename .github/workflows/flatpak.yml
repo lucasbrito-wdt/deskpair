@@ -57,14 +57,11 @@ jobs:
     name: Build Flatpak
     needs: build-deb
     runs-on: ubuntu-latest
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:gnome-48
+      options: --privileged
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Flatpak and flatpak-builder
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y flatpak flatpak-builder
-          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
       - name: Download .deb artifact
         uses: actions/download-artifact@v4
@@ -117,16 +114,21 @@ jobs:
                 - install -Dm644 dev.deskpair.app.metainfo.xml /app/share/metainfo/dev.deskpair.app.metainfo.xml
                 - install -Dm644 icons/dev.deskpair.app.svg /app/share/icons/hicolor/scalable/apps/dev.deskpair.app.svg
           YAML
-          # Remove leading whitespace (heredoc indentation)
           sed -i 's/^          //' flatpak/build-manifest.yml
 
       - name: Build Flatpak
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        run: |
+          flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse --force-clean --repo=repo build flatpak/build-manifest.yml
+
+      - name: Create bundle
+        run: |
+          flatpak build-bundle repo dev.deskpair.app.flatpak dev.deskpair.app
+
+      - name: Upload Flatpak bundle
+        uses: actions/upload-artifact@v4
         with:
-          manifest-path: flatpak/build-manifest.yml
-          bundle: dev.deskpair.app.flatpak
-          upload-artifact: true
-          cache-key: flatpak-builder-${{ github.sha }}
+          name: flatpak-bundle
+          path: dev.deskpair.app.flatpak
 
   release:
     name: Create GitHub Release
@@ -137,13 +139,10 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
-      - name: List artifacts
-        run: find . -type f -name "*.deb" -o -name "*.flatpak" | head -20
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             deb-package/*.deb
-            flatpak-app/*.flatpak
+            flatpak-bundle/*.flatpak
           generate_release_notes: true
