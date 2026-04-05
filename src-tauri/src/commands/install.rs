@@ -286,7 +286,11 @@ pub fn check_installation() -> bool {
     // Bundled: check relative to GUI binary
     if let Ok(exe) = std::env::current_exe() {
         if let Some(dir) = exe.parent() {
-            // Tauri resources: ../resources/bin/
+            // Tauri .deb: /usr/lib/Deskpair/bin/
+            if dir.join("../lib/Deskpair/bin/touchvnc-gnome").exists() {
+                return true;
+            }
+            // AppImage: ../resources/bin/
             if dir.join("../resources/bin/touchvnc-gnome").exists() {
                 return true;
             }

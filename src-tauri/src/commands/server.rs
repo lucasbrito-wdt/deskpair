@@ -47,14 +47,22 @@ fn find_binary(configured_path: &str) -> Result<(String, Option<String>), String
         }
     }
 
-    // Bundled: look for bin/ directory next to or relative to the GUI binary
+    // Bundled: look for bin/ directory relative to the GUI binary
     if let Ok(exe) = std::env::current_exe() {
         if let Some(dir) = exe.parent() {
-            // Tauri resources: ../resources/bin/touchvnc-gnome (.deb / AppImage)
-            let res_bin = dir.join("../resources/bin/touchvnc-gnome");
-            if res_bin.exists() {
-                let bin = res_bin.canonicalize().unwrap().to_string_lossy().into_owned();
-                let lib = res_bin.parent().unwrap().canonicalize().unwrap().to_string_lossy().into_owned();
+            // Tauri .deb resources: /usr/lib/<ProductName>/bin/
+            // exe is at /usr/bin/deskpair, resources at /usr/lib/Deskpair/bin/
+            let deb_res = dir.join("../lib/Deskpair/bin/touchvnc-gnome");
+            if deb_res.exists() {
+                let bin = deb_res.canonicalize().unwrap().to_string_lossy().into_owned();
+                let lib = deb_res.parent().unwrap().canonicalize().unwrap().to_string_lossy().into_owned();
+                return Ok((bin, Some(lib)));
+            }
+            // AppImage: resources next to binary
+            let appimage_res = dir.join("../resources/bin/touchvnc-gnome");
+            if appimage_res.exists() {
+                let bin = appimage_res.canonicalize().unwrap().to_string_lossy().into_owned();
+                let lib = appimage_res.parent().unwrap().canonicalize().unwrap().to_string_lossy().into_owned();
                 return Ok((bin, Some(lib)));
             }
             // dev layout: project root has bin/
