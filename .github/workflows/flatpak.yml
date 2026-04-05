@@ -1,0 +1,222 @@
+name: Build & Publish Flatpak
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  APP_ID: dev.deskpair.app
+  MANIFEST_PATH: flatpak/dev.deskpair.app.yml
+
+jobs:
+  build-deb:
+    name: Build Tauri .deb
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Build Tauri app
+        run: npx tauri build
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: src-tauri/target/release/bundle/deb/*.deb
+
+  build-flatpak:
+    name: Build Flatpak
+    needs: build-deb
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-46
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download .deb artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deb-package
+          path: flatpak/
+
+      - name: Get .deb filename and sha256
+        id: deb-info
+        run: |
+          DEB_FILE=$(ls flatpak/*.deb | head -1)
+          SHA256=$(sha256sum "$DEB_FILE" | cut -d' ' -f1)
+          echo "deb_file=$DEB_FILE" >> $GITHUB_OUTPUT
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+
+      - name: Patch manifest with local .deb
+        run: |
+          cat > flatpak/dev.deskpair.app.yml << 'MANIFEST'
+          id: dev.deskpair.app
+          runtime: org.gnome.Platform
+          runtime-version: '46'
+          sdk: org.gnome.Sdk
+          command: deskpair
+          finish-args:
+            - --socket=wayland
+            - --socket=fallback-x11
+            - --device=dri
+            - --share=ipc
+            - --share=network
+            - --filesystem=xdg-run/pipewire-0
+            - --talk-name=org.gnome.Mutter.RemoteDesktop
+            - --talk-name=org.gnome.Mutter.ScreenCast
+            - --talk-name=org.freedesktop.portal.ScreenCast
+            - --talk-name=org.freedesktop.portal.RemoteDesktop
+            - --talk-name=org.freedesktop.Notifications
+            - --talk-name=org.kde.StatusNotifierWatcher
+            - --device=all
+            - --filesystem=xdg-config/touchvnc-gnome:create
+          modules:
+            - name: deskpair
+              buildsystem: simple
+              sources:
+                - type: file
+                  path: Deskpair_0.1.0_amd64.deb
+              build-commands:
+                - ar -x *.deb
+                - tar -xf data.tar.gz
+                - install -Dm755 usr/bin/deskpair /app/bin/deskpair
+                - install -Dm644 dev.deskpair.app.desktop /app/share/applications/dev.deskpair.app.desktop
+                - install -Dm644 dev.deskpair.app.metainfo.xml /app/share/metainfo/dev.deskpair.app.metainfo.xml
+                - install -Dm644 icons/dev.deskpair.app.svg /app/share/icons/hicolor/scalable/apps/dev.deskpair.app.svg
+          MANIFEST
+
+      - name: Build Flatpak
+        run: |
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse --force-clean --repo=repo build flatpak/dev.deskpair.app.yml
+
+      - name: Generate static deltas
+        run: flatpak build-update-repo --generate-static-deltas --prune repo/
+
+      - name: Create .flatpak bundle
+        run: |
+          flatpak build-bundle repo dev.deskpair.app.flatpak dev.deskpair.app
+
+      - name: Upload Flatpak bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-bundle
+          path: dev.deskpair.app.flatpak
+
+      - name: Upload repo for Pages
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-repo
+          path: repo/
+
+  publish:
+    name: Publish to GitHub Pages
+    needs: build-flatpak
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download repo artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flatpak-repo
+          path: public/repo
+
+      - name: Create .flatpakrepo file
+        run: |
+          cat > public/deskpair.flatpakrepo << EOF
+          [Flatpak Repo]
+          Title=Deskpair
+          Url=https://${{ github.repository_owner }}.github.io/deskpair/repo/
+          Homepage=https://github.com/${{ github.repository }}
+          Comment=Deskpair - Turn any device into a second monitor
+          Description=Deskpair control panel and installer for touchvnc-gnome
+          Icon=https://${{ github.repository_owner }}.github.io/deskpair/icon.svg
+          EOF
+
+      - name: Create .flatpakref file
+        run: |
+          cat > public/dev.deskpair.app.flatpakref << EOF
+          [Flatpak Ref]
+          Name=dev.deskpair.app
+          Branch=master
+          Title=Deskpair
+          Url=https://${{ github.repository_owner }}.github.io/deskpair/repo/
+          RuntimeRepo=https://dl.flathub.org/repo/flathub.flatpakrepo
+          IsRuntime=false
+          EOF
+
+      - name: Copy icon
+        run: cp flatpak/icons/dev.deskpair.app.svg public/icon.svg
+
+      - name: Create index page
+        run: |
+          cat > public/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head><title>Deskpair Flatpak Repository</title></head>
+          <body>
+            <h1>Deskpair</h1>
+            <p>Turn any device into a second monitor for GNOME Linux.</p>
+            <h2>Install</h2>
+            <pre>flatpak install https://OWNER.github.io/deskpair/dev.deskpair.app.flatpakref</pre>
+            <p>Or add the repository:</p>
+            <pre>flatpak remote-add --if-not-exists deskpair https://OWNER.github.io/deskpair/deskpair.flatpakrepo</pre>
+          </body>
+          </html>
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  release:
+    name: Create GitHub Release
+    needs: [build-deb, build-flatpak]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            deb-package/*.deb
+            flatpak-bundle/*.flatpak
+          generate_release_notes: true

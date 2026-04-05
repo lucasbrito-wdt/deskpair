@@ -1,0 +1,31 @@
+[package]
+name = "touchvnc-gnome-gui"
+version = "0.1.0"
+description = "TouchVNC Control Panel & Installer"
+authors = ["Lucas Brito"]
+license = "ISC"
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.5.6", features = [] }
+
+[dependencies]
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.10.3", features = ["tray-icon"] }
+tauri-plugin-log = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-store = "2"
+tauri-plugin-notification = "2"
+tokio = { version = "1", features = ["full"] }
+toml = "0.8"
+rcgen = "0.13"
+local-ip-address = "0.6"
+libc = "0.2"

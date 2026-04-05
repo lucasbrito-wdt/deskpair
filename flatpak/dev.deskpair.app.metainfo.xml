@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dev.deskpair.app</id>
+
+  <name>Deskpair</name>
+  <summary>Turn any device into a second monitor for GNOME Linux</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>ISC</project_license>
+
+  <developer id="dev.deskpair">
+    <name>Lucas Brito</name>
+  </developer>
+
+  <description>
+    <p>
+      Deskpair is a control panel and installer for touchvnc-gnome, a VNC server
+      that creates a virtual second display on GNOME Linux desktops. Connect from
+      a tablet, phone, or laptop using any VNC client, and it appears as a real
+      monitor — drag windows to it, extend your workspace, and interact with full
+      touch, mouse, and keyboard support.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Virtual second display that appears as a real monitor in GNOME Settings</li>
+      <li>Multi-touch support with up to 10 simultaneous touch points</li>
+      <li>Full mouse and keyboard input with proper keysym-to-evdev translation</li>
+      <li>Works on both Wayland (Mutter RemoteDesktop) and X11 (xrandr)</li>
+      <li>Configurable resolution to match your device</li>
+      <li>Mirror mode to share an existing screen</li>
+      <li>Low latency PipeWire-based frame capture</li>
+      <li>QR code for quick connection from mobile devices</li>
+      <li>Installation wizard that checks dependencies and builds from source</li>
+      <li>TLS encryption and authentication support</li>
+      <li>System tray integration with autostart</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">dev.deskpair.app.desktop</launchable>
+
+  <url type="homepage">https://github.com/lucasbrito-wdt/touchvnc-gnome</url>
+  <url type="bugtracker">https://github.com/lucasbrito-wdt/touchvnc-gnome/issues</url>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#6366f1</color>
+    <color type="primary" scheme_preference="dark">#8b5cf6</color>
+  </branding>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Dashboard with server controls and connection info</caption>
+      <image>https://raw.githubusercontent.com/lucasbrito-wdt/deskpair/main/screenshots/dashboard.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Installation wizard with dependency checking</caption>
+      <image>https://raw.githubusercontent.com/lucasbrito-wdt/deskpair/main/screenshots/wizard.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Settings panel with display and security options</caption>
+      <image>https://raw.githubusercontent.com/lucasbrito-wdt/deskpair/main/screenshots/settings.png</image>
+    </screenshot>
+  </screenshots>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="0.1.0" date="2026-04-04">
+      <description>
+        <p>Initial release of Deskpair.</p>
+        <ul>
+          <li>Installation wizard with dependency detection and build from source</li>
+          <li>Dashboard with server start/stop, QR code, and connection info</li>
+          <li>Settings for display, network, security, and input</li>
+          <li>System tray integration</li>
+          <li>TLS certificate generation</li>
+          <li>Real-time log viewer</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+
+  <requires>
+    <display_length compare="ge">800</display_length>
+  </requires>
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+
+  <categories>
+    <category>Utility</category>
+    <category>RemoteAccess</category>
+    <category>Network</category>
+  </categories>
+
+  <keywords>
+    <keyword>vnc</keyword>
+    <keyword>virtual monitor</keyword>
+    <keyword>second screen</keyword>
+    <keyword>remote desktop</keyword>
+    <keyword>touch</keyword>
+    <keyword>tablet</keyword>
+    <keyword>extend display</keyword>
+  </keywords>
+</component>

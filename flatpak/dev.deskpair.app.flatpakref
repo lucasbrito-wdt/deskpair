@@ -1,0 +1,7 @@
+[Flatpak Ref]
+Name=dev.deskpair.app
+Branch=master
+Title=Deskpair
+Url=https://lucasbrito-wdt.github.io/deskpair/repo/
+RuntimeRepo=https://dl.flathub.org/repo/flathub.flatpakrepo
+IsRuntime=false

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Deskpair
+Comment=Turn any device into a second monitor for GNOME Linux
+Exec=deskpair
+Icon=dev.deskpair.app
+Terminal=false
+Type=Application
+Categories=Utility;RemoteAccess;Network;GTK;
+Keywords=vnc;virtual monitor;second screen;remote desktop;touch;tablet;
+StartupWMClass=Deskpair

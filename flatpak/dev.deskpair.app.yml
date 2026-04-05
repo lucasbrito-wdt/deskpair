@@ -1,0 +1,86 @@
+id: dev.deskpair.app
+runtime: org.gnome.Platform
+runtime-version: '46'
+sdk: org.gnome.Sdk
+command: deskpair
+
+finish-args:
+  # Display
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --share=ipc
+
+  # Network (VNC server needs to listen on ports)
+  - --share=network
+
+  # PipeWire (for screen capture)
+  - --filesystem=xdg-run/pipewire-0
+
+  # D-Bus access for Mutter RemoteDesktop + ScreenCast
+  - --talk-name=org.gnome.Mutter.RemoteDesktop
+  - --talk-name=org.gnome.Mutter.ScreenCast
+  - --talk-name=org.freedesktop.portal.ScreenCast
+  - --talk-name=org.freedesktop.portal.RemoteDesktop
+
+  # Notifications
+  - --talk-name=org.freedesktop.Notifications
+
+  # System tray (StatusNotifierItem)
+  - --talk-name=org.kde.StatusNotifierWatcher
+
+  # uinput for X11 input injection
+  - --device=all
+
+  # Config directory
+  - --filesystem=xdg-config/touchvnc-gnome:create
+
+modules:
+  # touchvnc-gnome core binary (built from source)
+  - name: touchvnc-gnome
+    buildsystem: meson
+    sources:
+      - type: git
+        url: https://github.com/lucasbrito-wdt/touchvnc-gnome.git
+        tag: v0.1.0
+        # commit: <will be filled with actual commit hash>
+    # Subprojects (aml, neatvnc) are bundled in the repo
+
+  # Deskpair GUI (from .deb release artifact)
+  - name: deskpair
+    buildsystem: simple
+    sources:
+      - type: file
+        url: https://github.com/lucasbrito-wdt/deskpair/releases/download/v0.1.0/Deskpair_0.1.0_amd64.deb
+        sha256: FILL_WITH_ACTUAL_SHA256
+        only-arches:
+          - x86_64
+      # Metainfo
+      - type: file
+        path: dev.deskpair.app.metainfo.xml
+      # Desktop file
+      - type: file
+        path: dev.deskpair.app.desktop
+      # Icon SVG
+      - type: file
+        path: icons/dev.deskpair.app.svg
+
+    build-commands:
+      # Extract .deb
+      - ar -x *.deb
+      - tar -xf data.tar.gz
+
+      # Install binary
+      - install -Dm755 usr/bin/deskpair /app/bin/deskpair
+
+      # Install desktop file
+      - install -Dm644 dev.deskpair.app.desktop /app/share/applications/dev.deskpair.app.desktop
+
+      # Install metainfo
+      - install -Dm644 dev.deskpair.app.metainfo.xml /app/share/metainfo/dev.deskpair.app.metainfo.xml
+
+      # Install icons
+      - install -Dm644 dev.deskpair.app.svg /app/share/icons/hicolor/scalable/apps/dev.deskpair.app.svg
+      - install -Dm644 usr/share/icons/hicolor/32x32/apps/deskpair.png /app/share/icons/hicolor/32x32/apps/dev.deskpair.app.png
+      - install -Dm644 usr/share/icons/hicolor/128x128/apps/deskpair.png /app/share/icons/hicolor/128x128/apps/dev.deskpair.app.png
+      - install -Dm644 usr/share/icons/hicolor/256x256@2/apps/deskpair.png /app/share/icons/hicolor/256x256@2/apps/dev.deskpair.app.png

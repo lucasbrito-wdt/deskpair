@@ -1,0 +1,144 @@
+import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+
+// --- Types matching Rust structs ---
+
+export interface ServerConfig {
+  address: string;
+  port: number;
+  width: number;
+  height: number;
+  mode: string;
+  binary_path: string;
+  extra_args: string[];
+}
+
+export interface ServerStatus {
+  running: boolean;
+  pid: number | null;
+  uptime_secs: number | null;
+}
+
+export interface SystemInfo {
+  os: string;
+  session_type: string;
+  gpu: string;
+}
+
+export interface DependencyStatus {
+  name: string;
+  installed: boolean;
+  package_name: string;
+}
+
+export interface BuildProgress {
+  stage: string;
+  percent: number;
+  message: string;
+}
+
+// --- Server Commands ---
+
+export async function startServer(config: ServerConfig): Promise<void> {
+  await invoke("start_server", { config });
+}
+
+export async function stopServer(): Promise<void> {
+  await invoke("stop_server");
+}
+
+export async function restartServer(config: ServerConfig): Promise<void> {
+  await invoke("restart_server", { config });
+}
+
+export async function getServerStatus(): Promise<ServerStatus> {
+  return await invoke<ServerStatus>("get_server_status");
+}
+
+export async function getServerLogs(): Promise<string[]> {
+  return await invoke<string[]>("get_server_logs");
+}
+
+// --- Installation / Wizard Commands ---
+
+export async function checkInstallation(): Promise<boolean> {
+  try {
+    return await invoke<boolean>("check_installation");
+  } catch {
+    return false;
+  }
+}
+
+export async function needsOnboarding(): Promise<boolean> {
+  try {
+    return await invoke<boolean>("needs_onboarding");
+  } catch {
+    return true; // If we can't check, show onboarding
+  }
+}
+
+export async function completeOnboarding(): Promise<void> {
+  await invoke("complete_onboarding");
+}
+
+export async function getSystemInfo(): Promise<SystemInfo> {
+  try {
+    return await invoke<SystemInfo>("check_system_info");
+  } catch {
+    return { os: "Unknown", session_type: "Unknown", gpu: "Unknown" };
+  }
+}
+
+export async function checkDependencies(): Promise<DependencyStatus[]> {
+  try {
+    return await invoke<DependencyStatus[]>("check_dependencies");
+  } catch {
+    return [];
+  }
+}
+
+export async function installDependencies(): Promise<void> {
+  await invoke("install_dependencies");
+}
+
+export async function buildProject(): Promise<void> {
+  await invoke("build_project");
+}
+
+export async function getLocalIp(): Promise<string> {
+  try {
+    return await invoke<string>("get_local_ip");
+  } catch {
+    return "127.0.0.1";
+  }
+}
+
+// --- TLS / Security ---
+
+export async function generateTlsCerts(): Promise<{ cert: string; key: string }> {
+  return await invoke("generate_tls_cert");
+}
+
+export async function generateRsaKey(): Promise<string> {
+  return await invoke("generate_rsa_key");
+}
+
+// --- Event Listeners ---
+
+export function onServerLog(callback: (line: string) => void): Promise<UnlistenFn> {
+  return listen<string>("server-log", (event) => {
+    callback(event.payload);
+  });
+}
+
+export function onServerStatus(callback: (status: ServerStatus) => void): Promise<UnlistenFn> {
+  return listen<ServerStatus>("server-status", (event) => {
+    callback(event.payload);
+  });
+}
+
+export function onBuildProgress(callback: (progress: BuildProgress) => void): Promise<UnlistenFn> {
+  return listen<BuildProgress>("build-progress", (event) => {
+    callback(event.payload);
+  });
+}
