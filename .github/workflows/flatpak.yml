@@ -113,6 +113,8 @@ jobs:
                 - install -Dm644 dev.deskpair.app.desktop /app/share/applications/dev.deskpair.app.desktop
                 - install -Dm644 dev.deskpair.app.metainfo.xml /app/share/metainfo/dev.deskpair.app.metainfo.xml
                 - install -Dm644 icons/dev.deskpair.app.svg /app/share/icons/hicolor/scalable/apps/dev.deskpair.app.svg
+                - install -Dm644 usr/share/icons/hicolor/128x128/apps/deskpair.png /app/share/icons/hicolor/128x128/apps/dev.deskpair.app.png || true
+                - install -Dm644 usr/share/icons/hicolor/32x32/apps/deskpair.png /app/share/icons/hicolor/32x32/apps/dev.deskpair.app.png || true
           YAML
           sed -i 's/^          //' flatpak/build-manifest.yml
 
