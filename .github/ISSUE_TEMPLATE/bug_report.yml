@@ -1,0 +1,89 @@
+name: Bug Report
+description: Report a bug in Deskpair
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting a bug! Please fill in as much detail as possible.
+
+  - type: input
+    id: version
+    attributes:
+      label: Deskpair Version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: Installation Method
+      options:
+        - .deb package
+        - AppImage
+        - Flatpak
+        - Built from source
+    validations:
+      required: true
+
+  - type: dropdown
+    id: session
+    attributes:
+      label: Session Type
+      options:
+        - Wayland
+        - X11
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      placeholder: "Ubuntu 24.04 / Fedora 41 / Arch / etc."
+    validations:
+      required: true
+
+  - type: input
+    id: desktop
+    attributes:
+      label: Desktop Environment
+      placeholder: "GNOME 46 / GNOME 47 / etc."
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste any relevant logs from the Logs page or terminal.
+      render: shell
