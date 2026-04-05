@@ -64,6 +64,21 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.1.1" date="2026-04-05">
+      <description>
+        <p>Bug fixes and packaging improvements.</p>
+        <ul>
+          <li>Fix Flatpak crash caused by missing libappindicator3 (tray disabled)</li>
+          <li>Fix binary name in .deb package (renamed to deskpair)</li>
+          <li>Remove build-from-source step in wizard (binary is now bundled)</li>
+          <li>Bundle touchvnc-gnome binary with shared libraries</li>
+          <li>Use GNOME 47 Flatpak runtime</li>
+          <li>Add Code of Conduct, Contributing guide, Security policy</li>
+          <li>Add issue templates and PR template</li>
+          <li>Add GitHub Pages landing page</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-04-04">
       <description>
         <p>Initial release of Deskpair.</p>
