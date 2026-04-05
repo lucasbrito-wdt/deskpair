@@ -8,8 +8,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
   build-deb:
@@ -62,16 +60,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Flatpak and flatpak-builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
       - name: Download .deb artifact
         uses: actions/download-artifact@v4
         with:
           name: deb-package
           path: flatpak/
 
-      - name: Generate manifest from .deb
+      - name: Generate manifest
         run: |
           DEB_NAME=$(basename flatpak/*.deb)
-          cat > flatpak/dev.deskpair.app.yml << EOF
+          cat > flatpak/build-manifest.yml << YAML
           id: dev.deskpair.app
           runtime: org.gnome.Platform
           runtime-version: '47'
@@ -112,12 +116,14 @@ jobs:
                 - install -Dm644 dev.deskpair.app.desktop /app/share/applications/dev.deskpair.app.desktop
                 - install -Dm644 dev.deskpair.app.metainfo.xml /app/share/metainfo/dev.deskpair.app.metainfo.xml
                 - install -Dm644 icons/dev.deskpair.app.svg /app/share/icons/hicolor/scalable/apps/dev.deskpair.app.svg
-          EOF
+          YAML
+          # Remove leading whitespace (heredoc indentation)
+          sed -i 's/^          //' flatpak/build-manifest.yml
 
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          manifest-path: flatpak/dev.deskpair.app.yml
+          manifest-path: flatpak/build-manifest.yml
           bundle: dev.deskpair.app.flatpak
           upload-artifact: true
           cache-key: flatpak-builder-${{ github.sha }}
@@ -131,10 +137,13 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
+      - name: List artifacts
+        run: find . -type f -name "*.deb" -o -name "*.flatpak" | head -20
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             deb-package/*.deb
-            flatpak-app/dev.deskpair.app.flatpak
+            flatpak-app/*.flatpak
           generate_release_notes: true
