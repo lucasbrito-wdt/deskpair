@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::io::{BufRead, BufReader};
-use std::process::{Command, Stdio};
-use tauri::{AppHandle, Emitter};
+use std::process::Command;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemInfo {
@@ -15,13 +13,6 @@ pub struct DepStatus {
     pub name: String,
     pub installed: bool,
     pub package_name: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BuildProgress {
-    pub stage: String,
-    pub percent: f64,
-    pub message: String,
 }
 
 fn read_os_release() -> String {
@@ -278,118 +269,6 @@ pub fn install_dependencies() -> Result<(), String> {
         let stderr = String::from_utf8_lossy(&output.stderr);
         return Err(format!("Installation failed: {}", stderr));
     }
-
-    Ok(())
-}
-
-#[tauri::command]
-pub fn build_project(app: AppHandle, source_path: String) -> Result<(), String> {
-    let source = std::path::Path::new(&source_path);
-    if !source.exists() {
-        return Err(format!(
-            "Source directory not found: {}. Clone the repository first.",
-            source_path
-        ));
-    }
-
-    let build_dir = source.join("build");
-
-    // meson setup (skip if build dir already exists with build.ninja)
-    if !build_dir.join("build.ninja").exists() {
-        let _ = app.emit(
-            "build-progress",
-            BuildProgress {
-                stage: "meson".into(),
-                percent: 10.0,
-                message: "Running meson setup...".into(),
-            },
-        );
-
-        let meson = Command::new("meson")
-            .args(["setup", "build"])
-            .current_dir(source)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output()
-            .map_err(|e| format!("Failed to run meson: {}", e))?;
-
-        for line in String::from_utf8_lossy(&meson.stdout).lines() {
-            let _ = app.emit(
-                "build-progress",
-                BuildProgress {
-                    stage: "meson".into(),
-                    percent: 20.0,
-                    message: line.to_string(),
-                },
-            );
-        }
-
-        if !meson.status.success() {
-            let stderr = String::from_utf8_lossy(&meson.stderr);
-            return Err(format!("meson setup failed: {}", stderr));
-        }
-    } else {
-        let _ = app.emit(
-            "build-progress",
-            BuildProgress {
-                stage: "meson".into(),
-                percent: 25.0,
-                message: "Build directory exists, skipping meson setup.".into(),
-            },
-        );
-    }
-
-    // ninja build
-    let _ = app.emit(
-        "build-progress",
-        BuildProgress {
-            stage: "ninja".into(),
-            percent: 30.0,
-            message: "Running ninja build...".into(),
-        },
-    );
-
-    let mut ninja = Command::new("ninja")
-        .args(["-C", build_dir.to_str().unwrap_or("build")])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("Failed to run ninja: {}", e))?;
-
-    if let Some(stdout) = ninja.stdout.take() {
-        let app_clone = app.clone();
-        let reader = BufReader::new(stdout);
-        let lines: Vec<String> = reader.lines().map_while(Result::ok).collect();
-        let total = lines.len().max(1);
-        for (i, line) in lines.iter().enumerate() {
-            let pct = 30.0 + (60.0 * (i as f64 / total as f64));
-            let _ = app_clone.emit(
-                "build-progress",
-                BuildProgress {
-                    stage: "ninja".into(),
-                    percent: pct,
-                    message: line.clone(),
-                },
-            );
-        }
-    }
-
-    let status = ninja
-        .wait()
-        .map_err(|e| format!("ninja failed: {}", e))?;
-
-    if !status.success() {
-        return Err("ninja build failed. Check build output for details.".into());
-    }
-
-    let _ = app.emit(
-        "build-progress",
-        BuildProgress {
-            stage: "done".into(),
-            percent: 100.0,
-            message: "Build completed successfully!".into(),
-        },
-    );
 
     Ok(())
 }

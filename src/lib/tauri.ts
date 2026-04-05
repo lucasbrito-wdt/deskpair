@@ -31,12 +31,6 @@ export interface DependencyStatus {
   package_name: string;
 }
 
-export interface BuildProgress {
-  stage: string;
-  percent: number;
-  message: string;
-}
-
 // --- Server Commands ---
 
 export async function startServer(config: ServerConfig): Promise<void> {
@@ -101,10 +95,6 @@ export async function installDependencies(): Promise<void> {
   await invoke("install_dependencies");
 }
 
-export async function buildProject(sourcePath: string): Promise<void> {
-  await invoke("build_project", { sourcePath });
-}
-
 export async function getLocalIp(): Promise<string> {
   try {
     return await invoke<string>("get_local_ip");
@@ -137,8 +127,3 @@ export function onServerStatus(callback: (status: ServerStatus) => void): Promis
   });
 }
 
-export function onBuildProgress(callback: (progress: BuildProgress) => void): Promise<UnlistenFn> {
-  return listen<BuildProgress>("build-progress", (event) => {
-    callback(event.payload);
-  });
-}

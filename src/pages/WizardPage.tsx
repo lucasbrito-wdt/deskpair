@@ -4,11 +4,10 @@ import { Monitor } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { WizardLayout } from "@/components/wizard/WizardLayout";
 import { StepDependencies } from "@/components/wizard/StepDependencies";
-import { StepBuild } from "@/components/wizard/StepBuild";
 import { StepConfigure } from "@/components/wizard/StepConfigure";
 import { StepComplete } from "@/components/wizard/StepComplete";
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 3;
 
 export function WizardPage() {
   const navigate = useNavigate();
@@ -61,13 +60,12 @@ export function WizardPage() {
         canGoBack={step > 0 && !isLastStep}
         canGoNext={isLastStep || stepReady[step] !== false}
         nextLabel={isLastStep ? "Open Dashboard" : "Next"}
-        showSkip={step < 2}
+        showSkip={step === 0}
         onSkip={goNext}
       >
         {step === 0 && <StepDependencies onReady={markReady(0)} />}
-        {step === 1 && <StepBuild onReady={markReady(1)} />}
-        {step === 2 && <StepConfigure onReady={markReady(2)} />}
-        {step === 3 && <StepComplete onOpenDashboard={goToDashboard} />}
+        {step === 1 && <StepConfigure onReady={markReady(1)} />}
+        {step === 2 && <StepComplete onOpenDashboard={goToDashboard} />}
       </WizardLayout>
     </div>
   );

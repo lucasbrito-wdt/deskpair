@@ -37,7 +37,6 @@ pub fn run() {
             commands::install::check_system_info,
             commands::install::check_dependencies,
             commands::install::install_dependencies,
-            commands::install::build_project,
             commands::install::check_installation,
             // config
             commands::config::load_config,
