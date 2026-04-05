@@ -295,20 +295,35 @@
     <h2 data-lang="en">Get Deskpair.</h2>
     <h2 data-lang="pt">Baixe o Deskpair.</h2>
 
-    <p class="subtitle" data-lang="en">Download the latest release from GitHub.</p>
-    <p class="subtitle" data-lang="pt">Baixe a versao mais recente do GitHub.</p>
+    <p class="subtitle" data-lang="en">Choose your preferred format.</p>
+    <p class="subtitle" data-lang="pt">Escolha o formato de sua preferencia.</p>
 
-    <div class="install-card" style="max-width: 500px;">
-      <h3>Debian / Ubuntu</h3>
-      <span class="tag tag-recommended" data-lang="en">Recommended</span>
-      <span class="tag tag-recommended" data-lang="pt">Recomendado</span>
-      <div class="install-code" data-copy-label="Click to copy" data-copied-label="Copied!" onclick="copyCmd(this)">
-        sudo dpkg -i Deskpair_0.1.2_amd64.deb
+    <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+      <div class="install-card">
+        <h3>Debian / Ubuntu</h3>
+        <span class="tag tag-recommended" data-lang="en">Recommended</span>
+        <span class="tag tag-recommended" data-lang="pt">Recomendado</span>
+        <div class="install-code" data-copy-label="Click to copy" data-copied-label="Copied!" onclick="copyCmd(this)">
+          sudo dpkg -i Deskpair_0.1.2_amd64.deb
+        </div>
+        <p style="margin-top: 12px; font-size: 13px; color: var(--text-2);">
+          <a href="https://github.com/lucasbrito-wdt/deskpair/releases/latest" style="color: var(--accent); text-decoration: none;" data-lang="en">Download .deb from Releases</a>
+          <a href="https://github.com/lucasbrito-wdt/deskpair/releases/latest" style="color: var(--accent); text-decoration: none;" data-lang="pt">Baixar .deb dos Releases</a>
+        </p>
       </div>
-      <p style="margin-top: 12px; font-size: 13px; color: var(--text-2);">
-        <a href="https://github.com/lucasbrito-wdt/deskpair/releases/latest" style="color: var(--accent); text-decoration: none;" data-lang="en">Download .deb from Releases</a>
-        <a href="https://github.com/lucasbrito-wdt/deskpair/releases/latest" style="color: var(--accent); text-decoration: none;" data-lang="pt">Baixar .deb dos Releases</a>
-      </p>
+
+      <div class="install-card">
+        <h3>Flatpak</h3>
+        <span class="tag" style="background: rgba(99,102,241,0.15); color: var(--accent);" data-lang="en">Sandboxed</span>
+        <span class="tag" style="background: rgba(99,102,241,0.15); color: var(--accent);" data-lang="pt">Sandbox</span>
+        <div class="install-code" data-copy-label="Click to copy" data-copied-label="Copied!" onclick="copyCmd(this)">
+          flatpak install dev.deskpair.app.flatpak
+        </div>
+        <p style="margin-top: 12px; font-size: 13px; color: var(--text-2);">
+          <a href="https://github.com/lucasbrito-wdt/deskpair/releases/latest" style="color: var(--accent); text-decoration: none;" data-lang="en">Download .flatpak from Releases</a>
+          <a href="https://github.com/lucasbrito-wdt/deskpair/releases/latest" style="color: var(--accent); text-decoration: none;" data-lang="pt">Baixar .flatpak dos Releases</a>
+        </p>
+      </div>
     </div>
   </section>
 
