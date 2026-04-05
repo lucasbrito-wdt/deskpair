@@ -23,7 +23,9 @@ pub fn run() {
         )
         .manage(app_state)
         .setup(|app| {
-            tray::setup_tray(app.handle())?;
+            if let Err(e) = tray::setup_tray(app.handle()) {
+                log::warn!("System tray not available: {e}. Running without tray.");
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
