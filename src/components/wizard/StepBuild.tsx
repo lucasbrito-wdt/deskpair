@@ -40,7 +40,7 @@ export function StepBuild({ onReady }: StepBuildProps) {
     setLines([]);
     setProgress(null);
     try {
-      await buildProject();
+      await buildProject("/mnt/dev/wdt/touchvnc-gnome");
       setStatus("done");
       onReady(true);
     } catch (err) {

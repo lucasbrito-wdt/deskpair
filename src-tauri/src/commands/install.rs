@@ -3,8 +3,6 @@ use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 use tauri::{AppHandle, Emitter};
 
-const TOUCHVNC_SOURCE_DIR: &str = "/mnt/dev/wdt/touchvnc-gnome";
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemInfo {
     pub os: String,
@@ -285,12 +283,12 @@ pub fn install_dependencies() -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn build_project(app: AppHandle) -> Result<(), String> {
-    let source = std::path::Path::new(TOUCHVNC_SOURCE_DIR);
+pub fn build_project(app: AppHandle, source_path: String) -> Result<(), String> {
+    let source = std::path::Path::new(&source_path);
     if !source.exists() {
         return Err(format!(
             "Source directory not found: {}. Clone the repository first.",
-            TOUCHVNC_SOURCE_DIR
+            source_path
         ));
     }
 
@@ -397,41 +395,31 @@ pub fn build_project(app: AppHandle) -> Result<(), String> {
 }
 
 /// Check if the touchvnc-gnome binary exists and is runnable.
-/// No arguments needed — uses the same search logic as the server starter.
 #[tauri::command]
 pub fn check_installation() -> bool {
-    let candidates = [
-        "/mnt/dev/wdt/touchvnc-gnome/build/touchvnc-gnome",
-        "/usr/local/bin/touchvnc-gnome",
-        "/usr/bin/touchvnc-gnome",
-    ];
-
-    // Also check next to the GUI binary (bundled)
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            let bundled = dir.join("touchvnc-gnome");
-            if bundled.exists() {
-                return true;
-            }
+    // System-installed
+    for candidate in &["/usr/local/bin/touchvnc-gnome", "/usr/bin/touchvnc-gnome"] {
+        if std::path::Path::new(candidate).exists() {
+            return true;
         }
     }
 
-    // Check working directory
-    if std::path::Path::new("touchvnc-gnome").exists() {
-        return true;
-    }
-
-    for candidate in &candidates {
-        let path = std::path::Path::new(candidate);
-        if path.exists() {
-            // Try running --help to verify it's actually executable
-            if let Ok(output) = Command::new(candidate).arg("--help").output() {
-                if output.status.success() || output.status.code() == Some(0) {
+    // Bundled: check relative to GUI binary
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            // Tauri resources: ../resources/bin/
+            if dir.join("../resources/bin/touchvnc-gnome").exists() {
+                return true;
+            }
+            // Dev layout: project root bin/
+            for depth in &["../../../..", "../../.."] {
+                if dir.join(depth).join("bin/touchvnc-gnome").exists() {
                     return true;
                 }
             }
         }
     }
 
-    false
+    // Working directory bin/
+    std::path::Path::new("bin/touchvnc-gnome").exists()
 }

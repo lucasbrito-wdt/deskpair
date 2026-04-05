@@ -77,13 +77,6 @@ fn find_binary(configured_path: &str) -> Result<(String, Option<String>), String
         return Ok((bin, Some(lib)));
     }
 
-    // Legacy: source build dir
-    let legacy = std::path::Path::new("/mnt/dev/wdt/touchvnc-gnome/build/touchvnc-gnome");
-    if legacy.exists() {
-        let lib_dir = "/mnt/dev/wdt/touchvnc-gnome/build/subprojects/aml:/mnt/dev/wdt/touchvnc-gnome/build/subprojects/neatvnc";
-        return Ok((legacy.to_string_lossy().into_owned(), Some(lib_dir.to_string())));
-    }
-
     Err("touchvnc-gnome binary not found. Please set the binary path in Settings > Advanced.".into())
 }
 

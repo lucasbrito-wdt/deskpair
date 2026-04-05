@@ -101,8 +101,8 @@ export async function installDependencies(): Promise<void> {
   await invoke("install_dependencies");
 }
 
-export async function buildProject(): Promise<void> {
-  await invoke("build_project");
+export async function buildProject(sourcePath: string): Promise<void> {
+  await invoke("build_project", { sourcePath });
 }
 
 export async function getLocalIp(): Promise<string> {
