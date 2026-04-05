@@ -78,7 +78,7 @@ jobs:
           cat > flatpak/build-manifest.yml << YAML
           id: dev.deskpair.app
           runtime: org.gnome.Platform
-          runtime-version: '47'
+          runtime-version: '48'
           sdk: org.gnome.Sdk
           command: deskpair
           finish-args:
