@@ -27,48 +27,61 @@ pub struct ServerStatus {
     pub uptime_secs: Option<u64>,
 }
 
-fn find_binary(configured_path: &str) -> Result<String, String> {
+/// Returns (binary_path, lib_dir) — lib_dir is set when the binary is bundled
+/// with its shared libraries so we can set LD_LIBRARY_PATH.
+fn find_binary(configured_path: &str) -> Result<(String, Option<String>), String> {
     if !configured_path.is_empty() {
         let path = std::path::Path::new(configured_path);
         if path.exists() {
-            return Ok(configured_path.to_string());
+            return Ok((configured_path.to_string(), None));
         }
     }
 
-    let candidates = [
-        "/mnt/dev/wdt/touchvnc-gnome/build/touchvnc-gnome",
+    // System-installed (libs are in system paths, no LD_LIBRARY_PATH needed)
+    for candidate in &[
         "/usr/local/bin/touchvnc-gnome",
         "/usr/bin/touchvnc-gnome",
-    ];
-
-    for candidate in &candidates {
+    ] {
         if std::path::Path::new(candidate).exists() {
-            return Ok(candidate.to_string());
+            return Ok((candidate.to_string(), None));
         }
     }
 
-    // Try relative to the GUI binary's parent directory
+    // Bundled: look for bin/ directory next to or relative to the GUI binary
     if let Ok(exe) = std::env::current_exe() {
         if let Some(dir) = exe.parent() {
-            // dev layout: touchvnc-gnome-gui/src-tauri/target/debug/ -> ../../touchvnc-gnome/build/
-            let dev_path = dir.join("../../../../touchvnc-gnome/build/touchvnc-gnome");
-            if dev_path.exists() {
-                return Ok(dev_path.canonicalize().unwrap().to_string_lossy().into());
+            // Tauri resources: ../resources/bin/touchvnc-gnome (.deb / AppImage)
+            let res_bin = dir.join("../resources/bin/touchvnc-gnome");
+            if res_bin.exists() {
+                let bin = res_bin.canonicalize().unwrap().to_string_lossy().into_owned();
+                let lib = res_bin.parent().unwrap().canonicalize().unwrap().to_string_lossy().into_owned();
+                return Ok((bin, Some(lib)));
             }
-            // sibling directory layout
-            let sibling = dir.join("../../../touchvnc-gnome/build/touchvnc-gnome");
-            if sibling.exists() {
-                return Ok(sibling.canonicalize().unwrap().to_string_lossy().into());
+            // dev layout: project root has bin/
+            for depth in &["../../../..", "../../.."] {
+                let dev_bin = dir.join(depth).join("bin/touchvnc-gnome");
+                if dev_bin.exists() {
+                    let bin = dev_bin.canonicalize().unwrap().to_string_lossy().into_owned();
+                    let lib = dev_bin.parent().unwrap().canonicalize().unwrap().to_string_lossy().into_owned();
+                    return Ok((bin, Some(lib)));
+                }
             }
         }
     }
 
-    // Last resort: check working directory relative paths
-    for rel in &["../touchvnc-gnome/build/touchvnc-gnome", "./build/touchvnc-gnome"] {
-        let p = std::path::Path::new(rel);
-        if p.exists() {
-            return Ok(p.canonicalize().unwrap_or(p.to_path_buf()).to_string_lossy().into());
-        }
+    // Check working directory bin/
+    let cwd_bin = std::path::Path::new("bin/touchvnc-gnome");
+    if cwd_bin.exists() {
+        let bin = cwd_bin.canonicalize().unwrap().to_string_lossy().into_owned();
+        let lib = cwd_bin.parent().unwrap().canonicalize().unwrap().to_string_lossy().into_owned();
+        return Ok((bin, Some(lib)));
+    }
+
+    // Legacy: source build dir
+    let legacy = std::path::Path::new("/mnt/dev/wdt/touchvnc-gnome/build/touchvnc-gnome");
+    if legacy.exists() {
+        let lib_dir = "/mnt/dev/wdt/touchvnc-gnome/build/subprojects/aml:/mnt/dev/wdt/touchvnc-gnome/build/subprojects/neatvnc";
+        return Ok((legacy.to_string_lossy().into_owned(), Some(lib_dir.to_string())));
     }
 
     Err("touchvnc-gnome binary not found. Please set the binary path in Settings > Advanced.".into())
@@ -146,14 +159,20 @@ pub fn start_server(
         }
     }
 
-    let binary = find_binary(&config.binary_path)?;
+    let (binary, lib_dir) = find_binary(&config.binary_path)?;
     let args = build_args(&config);
 
-    let mut child = Command::new(&binary)
-        .args(&args)
+    let mut cmd = Command::new(&binary);
+    cmd.args(&args)
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
+        .stderr(Stdio::piped());
+
+    // Set LD_LIBRARY_PATH so bundled .so files are found
+    if let Some(ref ld_path) = lib_dir {
+        cmd.env("LD_LIBRARY_PATH", ld_path);
+    }
+
+    let mut child = cmd.spawn()
         .map_err(|e| format!("Failed to start server: {}", e))?;
 
     // Clone the Arc for the log reader threads

@@ -401,10 +401,25 @@ pub fn build_project(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn check_installation() -> bool {
     let candidates = [
+        "/mnt/dev/wdt/touchvnc-gnome/build/touchvnc-gnome",
         "/usr/local/bin/touchvnc-gnome",
         "/usr/bin/touchvnc-gnome",
-        concat!("/mnt/dev/wdt/touchvnc-gnome/build/touchvnc-gnome"),
     ];
+
+    // Also check next to the GUI binary (bundled)
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            let bundled = dir.join("touchvnc-gnome");
+            if bundled.exists() {
+                return true;
+            }
+        }
+    }
+
+    // Check working directory
+    if std::path::Path::new("touchvnc-gnome").exists() {
+        return true;
+    }
 
     for candidate in &candidates {
         let path = std::path::Path::new(candidate);
