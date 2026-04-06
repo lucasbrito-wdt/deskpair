@@ -3,6 +3,61 @@ use std::path::PathBuf;
 use std::process::Command;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GpuInfo {
+    pub name: String,
+    pub path: String,
+    pub vendor_id: String,
+    pub is_preferred: bool,
+}
+
+#[tauri::command]
+pub fn list_gpus() -> Vec<GpuInfo> {
+    let mut gpus: Vec<(i32, GpuInfo)> = Vec::new();
+
+    for n in 128..160u32 {
+        let render_path = format!("/dev/dri/renderD{}", n);
+        if !std::path::Path::new(&render_path).exists() {
+            break;
+        }
+
+        let vendor_path = format!("/sys/class/drm/renderD{}/device/vendor", n);
+        let vendor_hex = match std::fs::read_to_string(&vendor_path) {
+            Ok(s) => s.trim().to_string(),
+            Err(_) => continue,
+        };
+
+        let vendor_id = u32::from_str_radix(vendor_hex.trim_start_matches("0x"), 16)
+            .unwrap_or(0);
+
+        let (name, priority) = match vendor_id {
+            0x10de => ("NVIDIA".to_string(), 3),
+            0x1002 => ("AMD".to_string(), 2),
+            0x8086 => ("Intel".to_string(), 1),
+            _ => (format!("GPU (vendor {:04x})", vendor_id), 0),
+        };
+
+        gpus.push((priority, GpuInfo {
+            name,
+            path: render_path,
+            vendor_id: format!("{:#06x}", vendor_id),
+            is_preferred: false,
+        }));
+    }
+
+    if gpus.is_empty() {
+        return vec![];
+    }
+
+    // Mark the highest-priority GPU as preferred
+    let max_priority = gpus.iter().map(|(p, _)| *p).max().unwrap_or(0);
+    gpus.iter_mut().for_each(|(p, g)| {
+        g.is_preferred = *p == max_priority;
+    });
+
+    gpus.into_iter().map(|(_, g)| g).collect()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PermissionStatus {
     pub input_group: bool,
     pub uinput_accessible: bool,

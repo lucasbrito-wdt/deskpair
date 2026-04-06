@@ -56,6 +56,7 @@ pub fn run() {
             // system
             commands::system::setup_autostart,
             commands::system::check_permissions,
+            commands::system::list_gpus,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

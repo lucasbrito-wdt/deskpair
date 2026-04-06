@@ -8,7 +8,8 @@ import { SettingsPage } from "@/pages/SettingsPage";
 import { LogsPage } from "@/pages/LogsPage";
 import { AboutPage } from "@/pages/AboutPage";
 import { WizardPage } from "@/pages/WizardPage";
-import { needsOnboarding } from "@/lib/tauri";
+import { needsOnboarding, loadConfig } from "@/lib/tauri";
+import { useConfigStore } from "@/stores/configStore";
 
 function AppLayout() {
   const location = useLocation();
@@ -41,8 +42,15 @@ export default function App() {
   const [installed, setInstalled] = useState<boolean | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const storeLoadConfig = useConfigStore((s) => s.loadConfig);
 
   useEffect(() => {
+    // Sync store from config.toml so saved settings (GPU, FPS, etc.) are
+    // always reflected in the UI, even if localStorage is stale or empty.
+    loadConfig().then((saved) => {
+      if (saved) storeLoadConfig(saved);
+    });
+
     needsOnboarding().then((needsSetup) => {
       setInstalled(!needsSetup);
       if (needsSetup && location.pathname !== "/wizard") {

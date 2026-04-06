@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { AppConfig } from "@/lib/constants";
 
 // --- Types matching Rust structs ---
 
@@ -23,6 +24,13 @@ export interface SystemInfo {
   os: string;
   session_type: string;
   gpu: string;
+}
+
+export interface GpuInfo {
+  name: string;
+  path: string;
+  vendor_id: string;
+  is_preferred: boolean;
 }
 
 export interface DependencyStatus {
@@ -83,6 +91,15 @@ export async function getSystemInfo(): Promise<SystemInfo> {
   }
 }
 
+export async function listGpus(): Promise<GpuInfo[]> {
+  try {
+    return await invoke<GpuInfo[]>("list_gpus");
+  } catch (err) {
+    console.error("list_gpus failed:", err);
+    return [];
+  }
+}
+
 export async function checkDependencies(): Promise<DependencyStatus[]> {
   try {
     return await invoke<DependencyStatus[]>("check_dependencies");
@@ -111,6 +128,75 @@ export async function generateTlsCerts(): Promise<{ cert: string; key: string }>
 
 export async function generateRsaKey(): Promise<string> {
   return await invoke("generate_rsa_key");
+}
+
+// --- Config ---
+
+/** Load saved config from config.toml and map snake_case → camelCase. */
+export async function loadConfig(): Promise<AppConfig | null> {
+  try {
+    const raw = await invoke<Record<string, unknown>>("load_config");
+    return {
+      address:        raw.address as string,
+      port:           raw.port as number,
+      width:          raw.width as number,
+      height:         raw.height as number,
+      mode:           raw.mode as string,
+      enableAuth:     raw.enable_auth as boolean,
+      username:       raw.username as string,
+      password:       raw.password as string,
+      tlsEnabled:     raw.tls_enabled as boolean,
+      autostart:      raw.autostart as boolean,
+      minimizeToTray: raw.minimize_to_tray as boolean,
+      autoStartServer: false,
+      binaryPath:     raw.binary_path as string,
+      extraArgs:      "",
+      logLevel:       "info",
+      enableTouch:    true,
+      enableMouse:    true,
+      enableKeyboard: true,
+      gpuMode:        (raw.gpu_mode as string) ?? "auto",
+      drmDevice:      (raw.drm_device as string) ?? "auto",
+      fpsDefault:     (raw.fps_default as number) ?? 144,
+      fpsMax:         (raw.fps_max as number) ?? 240,
+      pwBuffers:      (raw.pw_buffers as number) ?? 2,
+      pwBuffersMin:   (raw.pw_buffers_min as number) ?? 2,
+      pwBuffersMax:   (raw.pw_buffers_max as number) ?? 4,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Persist config to disk (writes config.toml + config.ini for the backend). */
+export async function saveConfig(config: AppConfig): Promise<void> {
+  await invoke("save_config", {
+    config: {
+      address:          config.address,
+      port:             config.port,
+      width:            config.width,
+      height:           config.height,
+      mode:             config.mode,
+      enable_auth:      config.enableAuth,
+      username:         config.username,
+      password:         config.password,
+      tls_enabled:      config.tlsEnabled,
+      tls_cert_path:    "",
+      tls_key_path:     "",
+      rsa_key_path:     "",
+      autostart:        config.autostart,
+      minimize_to_tray: config.minimizeToTray,
+      binary_path:      config.binaryPath,
+      onboarding_complete: true,
+      gpu_mode:         config.gpuMode,
+      drm_device:       config.drmDevice,
+      fps_default:      config.fpsDefault,
+      fps_max:          config.fpsMax,
+      pw_buffers:       config.pwBuffers,
+      pw_buffers_min:   config.pwBuffersMin,
+      pw_buffers_max:   config.pwBuffersMax,
+    },
+  });
 }
 
 // --- Event Listeners ---

@@ -30,6 +30,12 @@ export const LOG_LEVELS = [
   { value: "trace", label: "Trace" },
 ] as const;
 
+export const GPU_MODES = [
+  { value: "auto", label: "Auto", description: "Detect best GPU automatically" },
+  { value: "on",   label: "Enabled", description: "Force GPU (DmaBuf) path" },
+  { value: "off",  label: "Disabled", description: "Always use CPU (memcpy)" },
+] as const;
+
 export const DEFAULT_CONFIG = {
   address: "0.0.0.0",
   port: 5900,
@@ -49,6 +55,14 @@ export const DEFAULT_CONFIG = {
   enableTouch: true,
   enableMouse: true,
   enableKeyboard: true,
+  /* Performance / GPU */
+  gpuMode: "auto",
+  drmDevice: "auto",
+  fpsDefault: 144,
+  fpsMax: 240,
+  pwBuffers: 2,
+  pwBuffersMin: 2,
+  pwBuffersMax: 4,
 } as const;
 
 export type AppConfig = {
@@ -70,4 +84,12 @@ export type AppConfig = {
   enableTouch: boolean;
   enableMouse: boolean;
   enableKeyboard: boolean;
+  /* Performance / GPU */
+  gpuMode: string;
+  drmDevice: string;
+  fpsDefault: number;
+  fpsMax: number;
+  pwBuffers: number;
+  pwBuffersMin: number;
+  pwBuffersMax: number;
 };

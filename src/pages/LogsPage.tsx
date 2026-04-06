@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Search, Trash2, Download, ArrowDown } from "lucide-react";
+import { Search, Trash2, Download, ArrowDown, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useServer } from "@/hooks/useServer";
 
@@ -8,6 +8,7 @@ export function LogsPage() {
   const { logs, clearLogs } = useServer();
   const [filter, setFilter] = useState("");
   const [autoScroll, setAutoScroll] = useState(true);
+  const [copied, setCopied] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const filteredLogs = useMemo(() => {
@@ -27,6 +28,13 @@ export function LogsPage() {
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
     const atBottom = scrollHeight - scrollTop - clientHeight < 40;
     setAutoScroll(atBottom);
+  }
+
+  async function copyLogs() {
+    const text = filteredLogs.join("\n");
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   function exportLogs() {
@@ -72,6 +80,21 @@ export function LogsPage() {
         <span className="text-[10px] font-mono text-surface-500">
           {filteredLogs.length} lines
         </span>
+
+        <button
+          onClick={copyLogs}
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-lg",
+            "border border-surface-700/50 bg-surface-800/50",
+            "hover:bg-surface-700/50",
+            copied
+              ? "text-green-400 border-green-500/30"
+              : "text-surface-400 hover:text-surface-300",
+          )}
+          title="Copy logs"
+        >
+          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
 
         <button
           onClick={exportLogs}

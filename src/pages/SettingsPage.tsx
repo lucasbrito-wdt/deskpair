@@ -8,25 +8,33 @@ import { SecuritySettings } from "@/components/settings/SecuritySettings";
 import { InputSettings } from "@/components/settings/InputSettings";
 import { AdvancedSettings } from "@/components/settings/AdvancedSettings";
 import { SystemSettings } from "@/components/settings/SystemSettings";
+import { PerformanceSettings } from "@/components/settings/PerformanceSettings";
 import { useServerStore } from "@/stores/serverStore";
 import { useServer } from "@/hooks/useServer";
+import { useConfigStore } from "@/stores/configStore";
+import { saveConfig } from "@/lib/tauri";
 
 export function SettingsPage() {
   const running = useServerStore((s) => s.running);
   const { restart } = useServer();
+  const config = useConfigStore((s) => s.config);
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
     setSaving(true);
-    // Config is already persisted via zustand persist middleware
-    // Simulate a brief save confirmation
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    setSaving(false);
+    try {
+      await saveConfig(config);
+    } catch (err) {
+      console.error("Failed to save config:", err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleApplyRestart() {
     setSaving(true);
     try {
+      await saveConfig(config);
       await restart();
     } catch (err) {
       console.error("Restart failed:", err);
@@ -49,6 +57,7 @@ export function SettingsPage() {
           <SecuritySettings />
           <InputSettings />
           <SystemSettings />
+          <PerformanceSettings />
           <AdvancedSettings />
         </motion.div>
       </div>
